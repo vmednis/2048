@@ -211,20 +211,35 @@ bool Game::Move(Direction direction)
             //No block so you can't do anything, continue
             if(*row[i] == 0) continue;
 
-            //If the cell behind this one is empty
-            if(*row[i-1] == 0)
+            //Find the first block behind or the end of the board
+            unsigned int j;
+            for(j = i - 1; j > 0; j--)
             {
-                *row[i-1] = *row[i];
+                if(*row[j] != 0) break;
+            }
+
+            //If the cell behind this one is empty
+            if(*row[j] == 0)
+            {
+                *row[j] = *row[i];
                 *row[i] = 0;
                 somethingHappened = true;
             }
             //If the cell behind contains the same block
-            else if(*row[i-1] == *row[i])
+            else if(*row[j] == *row[i])
             {
-                *row[i-1] += *row[i];
+                *row[j] += *row[i];
                 *row[i] = 0;
                 somethingHappened = true;
             }
+            //We hit another block
+            else if(i - 1 != j)
+            {
+                *row[j+1] = *row[i];
+                *row[i] = 0;
+                somethingHappened = true;
+            }
+
         }
 
         return somethingHappened;
@@ -268,7 +283,7 @@ bool Game::Move(Direction direction)
             break;
         }
 
-        while(stepRow(ptrsMovableData)) somethingMoved = true;
+        if(stepRow(ptrsMovableData)) somethingMoved = true;
         i++;
     }
 
