@@ -1,4 +1,7 @@
 #include <iostream>
+#include <string>
+#include <cstdlib>
+#include <ctime>
 #include <termios.h>
 #include <unistd.h>
 #include <assert.h>
@@ -68,15 +71,301 @@ Terminal* Terminal::Instance()
     return ptrInstance;
 }
 
+enum Direction
+{
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+};
+
+class Game
+{
+public:
+    Game();
+    ~Game();
+
+    void DrawScreen();
+    bool AddNewBlock();
+
+    bool Move(Direction);
+
+private:
+    const static unsigned int boardWidth = 4;
+    const static unsigned int boardHeight = 4;
+    unsigned int** board;
+
+    //Strings used to draw the game board
+    const std::string strBlockTop = "\xe2\x94\x8c\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x90";
+    const std::string strBlockMid = "\xe2\x94\x82    \xe2\x94\x82";
+    const std::string strBlockBtm = "\xe2\x94\x94\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x98";
+    //Constants used in drawing the board
+    const unsigned int verticalOffset = 2;
+    const unsigned int horizontalOffset = 2;
+    const unsigned int verticalStep = 3;
+    const unsigned int horizontalStep = 6;
+};
+
+Game::Game()
+{
+    //Setup the board
+    board = new unsigned int* [boardWidth];
+    for(unsigned int i = 0; i < boardWidth; i++)
+    {
+        board[i] = new unsigned int[boardHeight];
+        for (unsigned int j = 0; j < boardHeight; j++)
+        {
+            board[i][j] = 0;
+        }
+    }
+}
+
+Game::~Game()
+{
+    //Get rid of the board
+    for(unsigned int i = 0; i < boardWidth; i++)
+    {
+        delete [] board[i];
+    }
+    delete [] board;
+}
+
+void Game::DrawScreen()
+{
+    Terminal::Instance()->ClearScreen();
+
+    //Draw the outer part
+    for(unsigned int i = 0; i < boardHeight; i++)
+    {
+        //Top
+        for(unsigned int j = 0; j < boardWidth; j++)
+        {
+            std::cout << strBlockTop;
+        }
+        std::cout << "\n";
+
+        //Mid
+        for(unsigned int j = 0; j < boardWidth; j++)
+        {
+            std::cout << strBlockMid;
+        }
+        std::cout << "\n";
+        
+        //Bottom
+        for(unsigned int j = 0; j < boardWidth; j++)
+        {
+            std::cout << strBlockBtm;
+        }
+        std::cout << "\n";
+    } 
+    
+    //Write the info
+    std::cout << "Use arrow keys to move the blocks.\n";
+    std::cout << "Press q to exit the game.\n";
+    //Setup the cursor return 
+    std::cout << "\033[s";
+    
+    //Fill out the blocks
+    for(unsigned int i = 0; i < boardWidth; i++)
+    {
+        for(unsigned int j = 0; j < boardHeight; j++)
+        {
+            if(board[i][j] != 0)
+            {
+                //Calculate cursor location
+                unsigned int x = i * horizontalStep + horizontalOffset;
+                unsigned int y = j * verticalStep + verticalOffset;
+
+                //Move the cursor
+                std::cout << "\033[" << y << ";" << x << "H";
+
+                //Print the board value
+                std::cout << board[i][j];
+            }
+        }
+    }
+    //Return cursor
+    std::cout << "\033[u";
+}
+
+bool Game::Move(Direction direction)
+{
+    bool somethingMoved = false;
+
+    //Create the array for moving data
+    unsigned int boardMax = (boardWidth > boardHeight) ? boardWidth : boardHeight;
+    unsigned int ** ptrsMovableData = new unsigned int * [boardMax];
+    for(unsigned int i = 0; i < boardMax; i++)
+    {
+        ptrsMovableData[i] = 0;
+    }
+
+    //This function actually does the block shifting
+    //If nothing was done it returns false
+    //otherwise true
+    auto stepRow = [boardMax](unsigned int ** row)->bool
+    {
+        bool somethingHappened = false;
+        for(unsigned int i = 1; i < boardMax; i++)
+        {
+            //No block so you can't do anything, continue
+            if(*row[i] == 0) continue;
+
+            //If the cell behind this one is empty
+            if(*row[i-1] == 0)
+            {
+                *row[i-1] = *row[i];
+                *row[i] = 0;
+                somethingHappened = true;
+            }
+            //If the cell behind contains the same block
+            else if(*row[i-1] == *row[i])
+            {
+                *row[i-1] += *row[i];
+                *row[i] = 0;
+                somethingHappened = true;
+            }
+        }
+
+        return somethingHappened;
+    };
+
+    //Move the 'rows' in correct direction, all of them
+    bool exit = false;
+    unsigned int i = 0;
+    while(!exit)
+    {
+        //Fill out the movable data with correct pointers
+        switch(direction)
+        {
+        case DOWN:
+            for(unsigned int j = 0; j < boardHeight; j++)
+            {
+                ptrsMovableData[j] = &board[i][boardHeight - j - 1];
+            }
+            if(i + 1 >= boardWidth) exit = true;
+            break;
+        case RIGHT:
+            for(unsigned int j = 0; j < boardWidth; j++)
+            {
+                ptrsMovableData[j] = &board[boardWidth - j - 1][i];
+            }
+            if(i + 1 >= boardHeight) exit = true;
+            break;
+        case UP:
+            for(unsigned int j = 0; j < boardWidth; j++)
+            {
+                ptrsMovableData[j] = &board[i][j];
+            }
+            if(i + 1 >= boardWidth) exit = true;
+            break;
+        case LEFT:
+            for(unsigned int j = 0; j < boardWidth; j++)
+            {
+                ptrsMovableData[j] = &board[j][i];
+            }
+            if(i + 1 >= boardHeight) exit = true;
+            break;
+        }
+
+        while(stepRow(ptrsMovableData)) somethingMoved = true;
+        i++;
+    }
+
+    return somethingMoved;
+}
+
+/*
+ * Returns true if succeded in adding a new block to the board
+ * fialse if not
+ */
+bool Game::AddNewBlock()
+{
+    unsigned int ** freeCells = new unsigned int* [boardWidth*boardHeight];
+
+    //Find the amount of free cells
+    unsigned int freeCellsCnt = 0;
+    for(unsigned int i = 0; i < boardWidth; i++)
+    {
+        for(unsigned int j = 0; j < boardHeight; j++)
+        {
+            if(board[i][j] == 0)
+            {
+                freeCells[freeCellsCnt] = &board[i][j];
+                freeCellsCnt++;
+            }
+        }
+    }
+
+    if(freeCellsCnt == 0)
+    {
+        //Clean up
+        delete [] freeCells;
+
+        //function failed 
+        return false;
+    }
+    
+    //Special case since rand doesn't like 1
+    if(freeCellsCnt == 1)
+    {
+        *freeCells[0] = 2;
+    }
+    //Chose a random free cell and set it to 2
+    else
+    {
+        *freeCells[std::rand() % (freeCellsCnt - 1)] = 2;
+    }
+
+    //Clean up
+    delete [] freeCells;
+
+    return true;
+}
+
 int main()
 {
     Terminal::Instance()->Setup();
-    Terminal::Instance()->ClearScreen();
-    
+ 
+    //Seed rng
+    std::srand(std::time(0));
+
+    Game game;
+    game.AddNewBlock();
+    game.DrawScreen();
+
     char cur = '\0';
     while(cur != 'q')
     {
         std::cin >> cur;
+        if(cur == '\033')
+        {
+            //The arrow keys are an escaped sequence
+            std::cin >> cur;
+            if(cur == '[')
+            {
+                std::cin >> cur;
+               
+                bool moved = false;
+                
+                //Process the arrow keys
+                if(cur == 'A' && game.Move(UP)) moved = true;
+                if(cur == 'B' && game.Move(DOWN)) moved = true;
+                if(cur == 'C' && game.Move(RIGHT)) moved = true;
+                if(cur == 'D' && game.Move(LEFT)) moved = true;
+
+                //If a turn has been done
+                if(moved)
+                {
+                    game.AddNewBlock();
+                    game.DrawScreen();
+                }
+                cur = '\0';
+            }
+
+            //Don't let a random q in escape sequence terminate the entire thing
+            cur = '\0';
+        }
     }
 
     Terminal::Instance()->Restore();
