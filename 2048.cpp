@@ -134,6 +134,9 @@ void Game::DrawScreen()
 {
     Terminal::Instance()->ClearScreen();
 
+    //restore default colors
+    std::cout << "\033[37;40m";
+
     //Draw the outer part
     for(unsigned int i = 0; i < boardHeight; i++)
     {
@@ -178,6 +181,52 @@ void Game::DrawScreen()
 
                 //Move the cursor
                 std::cout << "\033[" << y << ";" << x << "H";
+
+                //Reset intensity
+                std::cout << "\033[0m";
+                //Switch the color
+                switch(board[i][j])
+                {
+                    case 2:
+                        std::cout << "\033[31;40m";
+                        break;
+                    case 4:
+                        std::cout << "\033[32;40m";
+                        break;
+                    case 8:
+                        std::cout << "\033[33;40m";
+                        break;
+                    case 16:
+                        std::cout << "\033[34;40m";
+                        break;
+                    case 32:
+                        std::cout << "\033[35;40m";
+                        break;
+                    case 64:
+                        std::cout << "\033[36;40m";
+                        break;
+                    case 128:
+                        std::cout << "\033[37;40m";
+                        break;
+                    case 256:
+                        std::cout << "\033[31;1;40m";
+                        break;
+                    case 512:
+                        std::cout << "\033[32;1;40m";
+                        break;
+                    case 1024:
+                        std::cout << "\033[33;1;40m";
+                        break;
+                    case 2048:
+                        std::cout << "\033[34;1;40m";
+                        break;
+                    case 4096:
+                        std::cout << "\033[35;1;40m";
+                        break;
+                    case 8192:
+                        std::cout << "\033[36;1;40m";
+                        break;
+                }
 
                 //Print the board value
                 std::cout << board[i][j];
