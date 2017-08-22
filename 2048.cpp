@@ -255,6 +255,7 @@ bool Game::Move(Direction direction)
     auto stepRow = [boardMax](unsigned int ** row)->bool
     {
         bool somethingHappened = false;
+        bool merged[boardMax] = {};
         for(unsigned int i = 1; i < boardMax; i++)
         {
             //No block so you can't do anything, continue
@@ -275,10 +276,11 @@ bool Game::Move(Direction direction)
                 somethingHappened = true;
             }
             //If the cell behind contains the same block
-            else if(*row[j] == *row[i])
+            else if(*row[j] == *row[i] && !merged[j])
             {
                 *row[j] += *row[i];
                 *row[i] = 0;
+                merged[j] = true;
                 somethingHappened = true;
             }
             //We hit another block
