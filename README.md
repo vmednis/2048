@@ -1,8 +1,9 @@
 # 2048
-clone of the popular game 2048 working in terminal
+A terminal based clone of the popular game 2048.
 
-This should compile and work on basically anything that is even somewhat POSIX compliant.
-Uses c++11
+![Screenshot](/github/screenshot.png)
+
+Avoids use of any libraries, should compile and run on any system that is somewhat POSIX compliant.
 
 # Compiling
 ```bash
