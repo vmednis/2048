@@ -101,10 +101,17 @@ private:
     const static unsigned int boardHeight = 4;
     unsigned int** board;
 
+#ifdef ASCIIONLY
+    //Strings used to draw the game board
+    const std::string strBlockTop = "+----+";
+    const std::string strBlockMid = "|    |";
+    const std::string strBlockBtm = "+----+";
+#else
     //Strings used to draw the game board
     const std::string strBlockTop = "\xe2\x94\x8c\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x90";
     const std::string strBlockMid = "\xe2\x94\x82    \xe2\x94\x82";
     const std::string strBlockBtm = "\xe2\x94\x94\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x98";
+#endif
     //Constants used in drawing the board
     const unsigned int verticalOffset = 2;
     const unsigned int horizontalOffset = 2;
@@ -411,7 +418,7 @@ int main()
         bool moved = false;
         std::cin >> cur;
 
-        #ifdef IJKL_FALLBACK
+#ifdef IJKL_FALLBACK
 
         //Process the arrow keys
         if(cur == 'i' && game.Move(UP)) moved = true;
@@ -419,7 +426,7 @@ int main()
         if(cur == 'l' && game.Move(RIGHT)) moved = true;
         if(cur == 'j' && game.Move(LEFT)) moved = true;
 
-        #else
+#else
 
         if(cur == '\033')
         {
@@ -442,7 +449,7 @@ int main()
             cur = '\0';
         }
         
-        #endif
+#endif
         
         //If a turn has been done
         if(moved)
