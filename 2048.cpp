@@ -40,6 +40,12 @@ void Terminal::Setup()
 
     termios changed = original;
     changed.c_lflag &= ~(ICANON | ECHO); //Exit canonical mode and disable echoing
+
+    //Wait for one character and then proceed
+    changed.c_cc[VMIN] = 1;
+    changed.c_cc[VTIME] = 0;
+   
+    //Apply changes
     tcsetattr(STDIN_FILENO, TCSANOW, &changed);
 
     isSetup = true;
@@ -165,8 +171,6 @@ void Game::DrawScreen()
     //Write the info
     std::cout << "Use arrow keys to move the blocks.\n";
     std::cout << "Press q to exit the game.\n";
-    //Setup the cursor return 
-    std::cout << "\033[s";
     
     //Fill out the blocks
     for(unsigned int i = 0; i < boardWidth; i++)
@@ -234,7 +238,8 @@ void Game::DrawScreen()
         }
     }
     //Return cursor
-    std::cout << "\033[u";
+    //Could use nonhardcoded string with "return" escape sequence but some terminals don't support it
+    std::cout << "\033[" << 15 << ";" << 1 << "H"; 
 }
 
 bool Game::Move(Direction direction)
@@ -403,7 +408,19 @@ int main()
     char cur = '\0';
     while(cur != 'q')
     {
+        bool moved = false;
         std::cin >> cur;
+
+        #ifdef IJKL_FALLBACK
+
+        //Process the arrow keys
+        if(cur == 'i' && game.Move(UP)) moved = true;
+        if(cur == 'k' && game.Move(DOWN)) moved = true;
+        if(cur == 'l' && game.Move(RIGHT)) moved = true;
+        if(cur == 'j' && game.Move(LEFT)) moved = true;
+
+        #else
+
         if(cur == '\033')
         {
             //The arrow keys are an escaped sequence
@@ -412,7 +429,6 @@ int main()
             {
                 std::cin >> cur;
                
-                bool moved = false;
                 
                 //Process the arrow keys
                 if(cur == 'A' && game.Move(UP)) moved = true;
@@ -420,17 +436,19 @@ int main()
                 if(cur == 'C' && game.Move(RIGHT)) moved = true;
                 if(cur == 'D' && game.Move(LEFT)) moved = true;
 
-                //If a turn has been done
-                if(moved)
-                {
-                    game.AddNewBlock();
-                    game.DrawScreen();
-                }
-                cur = '\0';
             }
 
             //Don't let a random q in escape sequence terminate the entire thing
             cur = '\0';
+        }
+        
+        #endif
+        
+        //If a turn has been done
+        if(moved)
+        {
+            game.AddNewBlock();
+            game.DrawScreen();
         }
     }
 
