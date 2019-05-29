@@ -425,6 +425,11 @@ int main()
         if(cur == 'k' && game.Move(DOWN)) moved = true;
         if(cur == 'l' && game.Move(RIGHT)) moved = true;
         if(cur == 'j' && game.Move(LEFT)) moved = true;
+        
+        if(cur == 'w' && game.Move(UP)) moved = true;
+        if(cur == 's' && game.Move(DOWN)) moved = true;
+        if(cur == 'd' && game.Move(RIGHT)) moved = true;
+        if(cur == 'a' && game.Move(LEFT)) moved = true;
 
 #else
 
