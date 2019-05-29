@@ -426,6 +426,13 @@ int main()
         if(cur == 'l' && game.Move(RIGHT)) moved = true;
         if(cur == 'j' && game.Move(LEFT)) moved = true;
 
+#elif VIM_FALLBACK
+        
+        if(cur == 'k' && game.Move(UP)) moved = true;
+        if(cur == 'j' && game.Move(DOWN)) moved = true;
+        if(cur == 'l' && game.Move(RIGHT)) moved = true;
+        if(cur == 'h' && game.Move(LEFT)) moved = true;
+
 #else
 
         if(cur == '\033')
